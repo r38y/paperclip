@@ -191,6 +191,40 @@ class IntegrationTest < Test::Unit::TestCase
     
   end
   
+  context "A model with dimension columns and custom sizes" do
+    setup do
+      rebuild_model :with_dimensions => true,
+                    :styles => { :large => "40x30<",
+                                 :medium => "20x20",
+                                 :thumb => ["5x5#", :gif] },
+                    :default_style => :medium
+            
+      @dummy     = Dummy.new
+      @file = File.new(File.join(FIXTURES_DIR, "50x50.png"))
+    end
+    
+    should "return the default style dimensions" do
+      assert @dummy.avatar = @file
+      assert @dummy.save
+      assert_equal 20, @dummy.avatar.width
+      assert_equal 20, @dummy.avatar.height
+      assert_equal "20x20", @dummy.avatar.size
+    end
+    
+    should "return other style dimensions when asked" do
+      assert @dummy.avatar = @file
+      assert @dummy.save
+
+      assert_equal 5, @dummy.avatar.width(:thumb)
+      assert_equal 5, @dummy.avatar.height(:thumb)
+      assert_equal "5x5", @dummy.avatar.size(:thumb)
+
+      assert_equal 30, @dummy.avatar.width(:large)
+      assert_equal 30, @dummy.avatar.height(:large)
+      assert_equal "30x30", @dummy.avatar.size(:large)
+    end
+  end
+  
   context "A model with a filesystem attachment" do
     setup do
       rebuild_model :styles => { :large => "300x300>",

@@ -186,20 +186,37 @@ module Paperclip
 
     # Returns the width in pixels of the upload, if it is an image and
     # the model has an <attachment>_width column.
-    def width
-      instance_read(:width)
+    # Optionally pass a style; defaults to the default_style.
+    def width(style=nil)
+      dimensions = get_dimensions(style)
+      dimensions ? dimensions.last : nil
     end
     
     # Returns the height in pixels of the upload, if it is an image and
     # the model has an <attachment>_height column.
-    def height
-      instance_read(:height)
+    # Optionally pass a style; defaults to the default_style.
+    def height(style=nil)
+      dimensions = get_dimensions(style)
+      dimensions ? dimensions.first : nil
     end
     
     # Returns the pixel size of the upload (e.g. "200x50"), if it is an image
     # and the model has <attachment>_width and <attachment>_height columns.
-    def size
-      (width && height) ? "#{width}x#{height}" : nil
+    # Optionally pass a style; defaults to the default_style.
+    def size(style=nil)
+      dimensions = get_dimensions(style)
+      dimensions ? dimensions.join('x') : nil
+    end
+    
+    def get_dimensions(style=nil)
+      style ||= self.default_style
+      w, h = instance_read(:width, optional=true), instance_read(:height, optional=true)
+      return unless w && h
+      if !style || style == :original
+        [w, h]
+      else
+        Geometry.parse(Array(self.styles[style]).first).new_dimensions_for(w, h)
+      end
     end
 
     # A hash of procs that are run during the interpolation of a path or url.
