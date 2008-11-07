@@ -188,43 +188,21 @@ module Paperclip
     # the model has an <attachment>_width column.
     # Optionally pass a style; defaults to the default_style.
     def width(style=nil)
-      dimensions = get_dimensions(style)
-      dimensions ? dimensions.last : nil
+      dimensions(style)[:width]
     end
     
     # Returns the height in pixels of the upload, if it is an image and
     # the model has an <attachment>_height column.
     # Optionally pass a style; defaults to the default_style.
     def height(style=nil)
-      dimensions = get_dimensions(style)
-      dimensions ? dimensions.first : nil
+      dimensions(style)[:height]
     end
     
     # Returns the pixel size of the upload (e.g. "200x50"), if it is an image
     # and the model has <attachment>_width and <attachment>_height columns.
     # Optionally pass a style; defaults to the default_style.
     def size(style=nil)
-      dimensions = get_dimensions(style)
-      dimensions ? dimensions.join('x') : nil
-    end
-    
-    def get_dimensions(style=nil)
-      style = style || self.default_style || :original
-      
-      @dimensions ||= {}
-      if d = @dimensions[style]
-        return d
-      end
-      
-      w, h = instance_read(:width, optional=true), instance_read(:height, optional=true)
-      @dimensions[style] =
-        if !(w && h)
-          nil
-        elsif style == :original
-          [w, h]
-        else
-          Geometry.parse(Array(self.styles[style]).first).new_dimensions_for(w, h)
-        end
+      dimensions(style)[:size]
     end
 
     # A hash of procs that are run during the interpolation of a path or url.
@@ -357,6 +335,26 @@ module Paperclip
           blk.call( self, style )
         end
       end
+    end
+    
+    def dimensions(style=nil)
+      style = style || self.default_style || :original
+      
+      @dimensions ||= {}
+      if d = @dimensions[style]
+        return d
+      end
+      
+      w, h = instance_read(:width, optional=true), instance_read(:height, optional=true)
+      w, h =
+        if !(w && h)
+          [nil, nil]
+        elsif style == :original
+          [w, h]
+        else
+          Geometry.parse(Array(self.styles[style]).first).new_dimensions_for(w, h)
+        end
+      @dimensions[style] = { :width => w, :height => h, :size => (w ? "#{w}x#{h}" : nil) }
     end
 
     def queue_existing_for_delete #:nodoc:
