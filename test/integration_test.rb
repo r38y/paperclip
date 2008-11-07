@@ -137,6 +137,49 @@ class IntegrationTest < Test::Unit::TestCase
     end
   end
   
+  context "A model with no dimension columns" do
+    setup do
+      rebuild_model
+      @dummy      = Dummy.new
+      @file = File.new(File.join(FIXTURES_DIR, "5k.png"))
+    end
+    
+    should "not break on image uploads" do
+      assert_nothing_raised do
+        assert @dummy.avatar = @file
+        assert @dummy.save
+      end
+    end
+  end
+
+  context "A model with dimension columns" do
+    setup do
+      rebuild_model :with_dimensions => true
+      @dummy     = Dummy.new
+      @image_file = File.new(File.join(FIXTURES_DIR, "50x50.png"))
+      @text_file  = File.new(File.join(FIXTURES_DIR, "text.txt"))
+    end
+    
+    should "assign dimensions for image uploads" do
+      assert @dummy.avatar = @image_file
+      assert @dummy.save
+      assert_equal 50, @dummy.avatar.width
+      assert_equal 50, @dummy.avatar.height
+      assert_equal "50x50", @dummy.avatar.size
+    end
+
+    should "unassign dimensions if changing image upload to non-image" do
+      @dummy.avatar = @image_file
+      @dummy.save
+      @dummy.avatar = @text_file
+      @dummy.save
+      assert_nil @dummy.avatar.width
+      assert_nil @dummy.avatar.height
+      assert_nil @dummy.avatar.size
+    end
+    
+  end
+  
   context "A model with a filesystem attachment" do
     setup do
       rebuild_model :styles => { :large => "300x300>",

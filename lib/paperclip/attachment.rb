@@ -78,6 +78,16 @@ module Paperclip
       instance_write(:file_name,       uploaded_file.original_filename.strip.gsub(/[^\w\d\.\-]+/, '_'))
       instance_write(:content_type,    uploaded_file.content_type.to_s.strip)
       instance_write(:file_size,       uploaded_file.size.to_i)
+
+      width = height = nil
+      begin
+        dimensions = Paperclip::Geometry.from_file(uploaded_file)
+        width, height = dimensions.width, dimensions.height
+      rescue  # don't choke on bad images
+      end if image?
+      instance_write(:width,           width, optional=true)
+      instance_write(:height,          height, optional=true)
+
       instance_write(:updated_at,      Time.now)
 
       @dirty = true
@@ -164,6 +174,32 @@ module Paperclip
       time = instance_read(:updated_at)
       time && time.to_i
     end
+    
+    def content_type
+      instance_read(:content_type)
+    end
+    
+    def image?
+      !!content_type.match(%r{\Aimage/})
+    end
+
+    # Returns the width in pixels of the upload, if it is an image and
+    # the model has an <attachment>_width column.
+    def width
+      instance_read(:width)
+    end
+    
+    # Returns the height in pixels of the upload, if it is an image and
+    # the model has an <attachment>_height column.
+    def height
+      instance_read(:height)
+    end
+    
+    # Returns the pixel size of the upload (e.g. "200x50"), if it is an image
+    # and the model has <attachment>_width and <attachment>_height columns.
+    def size
+      (width && height) ? "#{width}x#{height}" : nil
+    end
 
     # A hash of procs that are run during the interpolation of a path or url.
     # A variable of the format :name will be replaced with the return value of
@@ -218,12 +254,18 @@ module Paperclip
       !original_filename.blank?
     end
 
-    def instance_write(attr, value)
-      instance.send(:"#{name}_#{attr}=", value)
+    def instance_write(attr, value, optional=false)
+      method = :"#{name}_#{attr}="
+      if !optional || instance.respond_to?(method)
+        instance.send(method, value)
+      end
     end
 
-    def instance_read(attr)
-      instance.send(:"#{name}_#{attr}")
+    def instance_read(attr, optional=false)
+      method = :"#{name}_#{attr}"
+      if !optional || instance.respond_to?(method)
+        instance.send(method)
+      end
     end
 
     private
