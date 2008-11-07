@@ -178,6 +178,17 @@ class IntegrationTest < Test::Unit::TestCase
       assert_nil @dummy.avatar.size
     end
     
+    should "have geometric methods" do
+      assert @dummy.avatar = @image_file
+      assert @dummy.save
+      assert @dummy.avatar.square?
+      assert ! @dummy.avatar.horizontal?
+      assert ! @dummy.avatar.vertical?
+      assert_equal 1, @dummy.avatar.aspect
+      assert_equal 50, @dummy.avatar.larger
+      assert_equal 50, @dummy.avatar.smaller
+    end
+    
   end
   
   context "A model with a filesystem attachment" do

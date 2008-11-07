@@ -28,6 +28,7 @@
 require 'tempfile'
 require 'paperclip/upfile'
 require 'paperclip/iostream'
+require 'paperclip/geometric'
 require 'paperclip/geometry'
 require 'paperclip/thumbnail'
 require 'paperclip/storage'

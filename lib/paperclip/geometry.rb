@@ -2,6 +2,7 @@ module Paperclip
 
   # Defines the geometry of an image.
   class Geometry
+    include Paperclip::Geometric
     attr_accessor :height, :width, :modifier
 
     # Gives a Geometry representing the given height and width
@@ -29,36 +30,6 @@ module Paperclip
       if match = (string && string.match(/\b(\d*)x?(\d*)\b([\>\<\#\@\%^!])?/))
         Geometry.new(*match[1,3])
       end
-    end
-
-    # True if the dimensions represent a square
-    def square?
-      height == width
-    end
-
-    # True if the dimensions represent a horizontal rectangle
-    def horizontal?
-      height < width
-    end
-
-    # True if the dimensions represent a vertical rectangle
-    def vertical?
-      height > width
-    end
-
-    # The aspect ratio of the dimensions.
-    def aspect
-      width / height
-    end
-
-    # Returns the larger of the two dimensions
-    def larger
-      [height, width].max
-    end
-
-    # Returns the smaller of the two dimensions
-    def smaller
-      [height, width].min
     end
 
     # Returns the width and height in a format suitable to be passed to Geometry.parse
