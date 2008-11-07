@@ -209,14 +209,22 @@ module Paperclip
     end
     
     def get_dimensions(style=nil)
-      style ||= self.default_style
-      w, h = instance_read(:width, optional=true), instance_read(:height, optional=true)
-      return unless w && h
-      if !style || style == :original
-        [w, h]
-      else
-        Geometry.parse(Array(self.styles[style]).first).new_dimensions_for(w, h)
+      style = style || self.default_style || :original
+      
+      @dimensions ||= {}
+      if d = @dimensions[style]
+        return d
       end
+      
+      w, h = instance_read(:width, optional=true), instance_read(:height, optional=true)
+      @dimensions[style] =
+        if !(w && h)
+          nil
+        elsif style == :original
+          [w, h]
+        else
+          Geometry.parse(Array(self.styles[style]).first).new_dimensions_for(w, h)
+        end
     end
 
     # A hash of procs that are run during the interpolation of a path or url.
@@ -363,6 +371,7 @@ module Paperclip
       instance_write(:width, nil, optional=true)
       instance_write(:height, nil, optional=true)
       instance_write(:updated_at, nil)
+      @dimensions = {}
     end
 
     def flush_errors #:nodoc:

@@ -156,8 +156,9 @@ class IntegrationTest < Test::Unit::TestCase
     setup do
       rebuild_model :with_dimensions => true
       @dummy     = Dummy.new
-      @image_file = File.new(File.join(FIXTURES_DIR, "50x50.png"))
-      @text_file  = File.new(File.join(FIXTURES_DIR, "text.txt"))
+      @image_file  = File.new(File.join(FIXTURES_DIR, "50x50.png"))
+      @image_file2 = File.new(File.join(FIXTURES_DIR, "5k.png"))
+      @text_file   = File.new(File.join(FIXTURES_DIR, "text.txt"))
     end
     
     should "assign dimensions for image uploads" do
@@ -167,14 +168,24 @@ class IntegrationTest < Test::Unit::TestCase
       assert_equal 50, @dummy.avatar.height
       assert_equal "50x50", @dummy.avatar.size
     end
+    
+    should "change dimensions if changing image upload" do
+      @dummy.avatar = @image_file
+      @dummy.save
+      old_size = `identify -format "%wx%h" #{@dummy.avatar.to_file(:original).path}`.chomp
+      assert_equal old_size, @dummy.avatar.size
+      @dummy.avatar = @image_file2
+      @dummy.save
+      new_size = `identify -format "%wx%h" #{@dummy.avatar.to_file(:original).path}`.chomp
+      assert_equal new_size, @dummy.avatar.size
+      assert_not_equal old_size, new_size  # sanity check
+    end
 
     should "unassign dimensions if changing image upload to non-image" do
       @dummy.avatar = @image_file
       @dummy.save
       @dummy.avatar = @text_file
       @dummy.save
-      assert_nil @dummy.avatar.width
-      assert_nil @dummy.avatar.height
       assert_nil @dummy.avatar.size
     end
     
