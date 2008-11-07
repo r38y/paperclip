@@ -343,6 +343,8 @@ module Paperclip
       instance_write(:file_name, nil)
       instance_write(:content_type, nil)
       instance_write(:file_size, nil)
+      instance_write(:width, nil, optional=true)
+      instance_write(:height, nil, optional=true)
       instance_write(:updated_at, nil)
     end
 
