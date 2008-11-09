@@ -178,7 +178,8 @@ module Paperclip
     def validates_attachment_size name, options = {}
       attachment_definitions[name][:validations] << lambda do |attachment, instance|
         unless options[:greater_than].nil?
-          options[:in] = (options[:greater_than]..(1/0)) # 1/0 => Infinity
+          infinity = 1/0.0
+          options[:in] = (options[:greater_than]..infinity)
         end
         unless options[:less_than].nil?
           options[:in] = (0..options[:less_than])
