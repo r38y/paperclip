@@ -85,6 +85,7 @@ module Paperclip
         dimensions = Paperclip::Geometry.from_file(uploaded_file)
         width, height = dimensions.width, dimensions.height
       rescue  # don't choke on bad images
+        logger.debug("[paperclip] Couldn't get dimensions for #{name}")
       end if image?
       instance_write(:width,           width, optional=true)
       instance_write(:height,          height, optional=true)
