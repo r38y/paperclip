@@ -62,6 +62,9 @@ module Paperclip
     def run cmd, params = "", expected_outcodes = 0
       output = `#{%Q[#{path_for_command(cmd)} #{params} 2>#{bit_bucket}].gsub(/\s+/, " ")}`
       unless [expected_outcodes].flatten.include?($?.exitstatus)
+        if $?.exitstatus == 127
+          RAILS_DEFAULT_LOGGER.debug "[paperclip] Couldn't find '#{cmd}' in $PATH. Install ImageMagick or set e.g. Paperclip.options[:image_magick_path] = '/opt/local/bin' in an initializer." 
+        end
         raise PaperclipCommandLineError, "Error while running #{cmd}"
       end
       output
