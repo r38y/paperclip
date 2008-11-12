@@ -124,7 +124,7 @@ module Paperclip
     #                       :default_style => :normal
     #     user.avatar.url # => "/avatars/23/normal_me.png"
     # * +whiny_thumbnails+: Will raise an error if Paperclip cannot process thumbnails of an
-    #   uploaded image. This will ovrride the global setting for this attachment. 
+    #   uploaded image. This will override the global setting for this attachment. 
     #   Defaults to true. 
     # * +convert_options+: When creating thumbnails, use this free-form options
     #   field to pass in various convert command options.  Typical options are "-strip" to
