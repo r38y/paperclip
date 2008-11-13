@@ -205,7 +205,7 @@ class IntegrationTest < Test::Unit::TestCase
   context "A model with dimension columns and custom sizes" do
     setup do
       rebuild_model :with_dimensions => true,
-                    :styles => { :large => "40x30<",
+                    :styles => { :large => "40x30>",
                                  :medium => "20x20",
                                  :thumb => ["5x5#", :gif] },
                     :default_style => :medium

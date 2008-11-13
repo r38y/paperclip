@@ -94,8 +94,8 @@ module Paperclip
             end
           new_width  = scale_factor * new_width.to_f
           new_height = scale_factor * new_height.to_f
-          new_width  = orig_width  if self.modifier && orig_width.send(self.modifier,  new_width)
-          new_height = orig_height if self.modifier && orig_height.send(self.modifier, new_height)
+          new_width  = orig_width  if self.modifier && new_width.send(self.modifier,  orig_width)
+          new_height = orig_height if self.modifier && new_height.send(self.modifier, orig_height)
       end
 
       [new_width, new_height].collect! { |v| [v.round, 1].max }
