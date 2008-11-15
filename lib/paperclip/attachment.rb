@@ -74,15 +74,19 @@ module Paperclip
 
       return nil if uploaded_file.nil?
 
+      # Smaller uploads may become an ActionController::UploadedStringIO, so
+      # we need this where a File is expected.
+      tempfile = uploaded_file.to_tempfile
+
       logger.info("[paperclip] Writing attributes for #{name}")
-      @queued_for_write[:original]   = uploaded_file.to_tempfile
+      @queued_for_write[:original]   = tempfile
       instance_write(:file_name,       uploaded_file.original_filename.strip.gsub(/[^\w\d\.\-]+/, '_'))
       instance_write(:content_type,    uploaded_file.content_type.to_s.strip)
       instance_write(:file_size,       uploaded_file.size.to_i)
 
       width = height = nil
       begin
-        dimensions = Paperclip::Geometry.from_file(uploaded_file)
+        dimensions = Paperclip::Geometry.from_file(tempfile)
         width, height = dimensions.width, dimensions.height
       rescue  # don't choke on bad images
         logger.debug("[paperclip] Couldn't get dimensions for #{name}")
