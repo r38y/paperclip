@@ -179,10 +179,11 @@ module Paperclip
     # * +greater_than+: equivalent to :in => options[:greater_than]..Infinity
     # * +message+: error message to display, use :min and :max as replacements
     def validates_attachment_size name, options = {}
-      min     = options[:greater_than] || (options[:in] && options[:in].first) || 0
-      max     = options[:less_than]    || (options[:in] && options[:in].last)  || (1.0/0)
-      range   = (min..max)
-      message = options[:message] || "file size must be between :min and :max bytes."
+      infinity = 1.0/0
+      min      = options[:greater_than] || (options[:in] && options[:in].first) || 0
+      max      = options[:less_than]    || (options[:in] && options[:in].last)  || infinity
+      range    = (min..max)
+      message  = options[:message] || "file size must be between :min and :max bytes."
 
       attachment_definitions[name][:validations][:size] = lambda do |attachment, instance|
         if attachment.file? && !range.include?(attachment.instance_read(:file_size).to_i)
