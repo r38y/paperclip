@@ -4,6 +4,9 @@ require 'shoulda'
 require 'mocha'
 require 'tempfile'
 
+# Unbreak with Rails 2.2, see http://gusg.us/code/ruby/rails-2_2-headaches-1
+gem 'sqlite3-ruby'
+
 require 'active_record'
 require 'active_support'
 begin
