@@ -142,7 +142,7 @@ module Paperclip
     # Returns true if there are no errors on this attachment.
     def valid?
       validate
-      errors.length == 0
+      errors.empty?
     end
 
     # Returns an array containing the errors on this attachment.
@@ -295,6 +295,7 @@ module Paperclip
           errors[name] = block.call(self, instance) if block
           errors
         end
+        @validation_errors.reject!{|k,v| v == nil }
         @errors.merge!(@validation_errors)
       end
       @validation_errors
