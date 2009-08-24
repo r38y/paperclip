@@ -457,7 +457,7 @@ module Paperclip
         elsif style == :original
           [w, h]
         else
-          Geometry.parse(Array(self.styles[style]).first).new_dimensions_for(w, h)
+          Geometry.parse(Array(self.styles[style][:geometry]).first).new_dimensions_for(w, h)
         end
       @dimensions[style] = { :width => w, :height => h, :size => (w ? "#{w}x#{h}" : nil) }
     end
