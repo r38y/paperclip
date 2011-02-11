@@ -1,4 +1,4 @@
-require 'test/helper'
+require './test/helper'
 
 class IntegrationTest < Test::Unit::TestCase
   context "Many models at once" do
@@ -9,7 +9,7 @@ class IntegrationTest < Test::Unit::TestCase
         Dummy.create! :avatar => @file
       end
     end
-    
+
     should "not exceed the open file limit" do
        assert_nothing_raised do
          dummies = Dummy.find(:all)
@@ -17,14 +17,14 @@ class IntegrationTest < Test::Unit::TestCase
        end
     end
   end
-  
+
   context "Assigning an attachment by path" do
     setup do
       rebuild_model
       @dummy = Dummy.new
       @path = File.join(File.dirname(__FILE__), "fixtures", "5k.png")
     end
-    
+
     should "work" do
       @dummy.avatar.path = @path
       assert @dummy.save
@@ -47,6 +47,22 @@ class IntegrationTest < Test::Unit::TestCase
 
     should "create its thumbnails properly" do
       assert_match /\b50x50\b/, `identify "#{@dummy.avatar.path(:thumb)}"`
+    end
+
+    context 'reprocessing with unreadable original' do
+      setup { File.chmod(0000, @dummy.avatar.path) }
+
+      should "not raise an error" do
+        assert_nothing_raised do
+          @dummy.avatar.reprocess!
+        end
+      end
+
+      should "return false" do
+        assert ! @dummy.avatar.reprocess!
+      end
+
+      teardown { File.chmod(0644, @dummy.avatar.path) }
     end
 
     context "redefining its attachment styles" do
@@ -171,7 +187,7 @@ class IntegrationTest < Test::Unit::TestCase
       end
     end
   end
-  
+
   context "A model with no convert_options setting" do
     setup do
       rebuild_model :styles => { :large => "300x300>",
@@ -182,7 +198,7 @@ class IntegrationTest < Test::Unit::TestCase
                     :path => ":rails_root/tmp/:attachment/:class/:style/:id/:basename.:extension"
       @dummy     = Dummy.new
     end
-    
+
     should "have its definition return nil when asked about convert_options" do
       assert ! Dummy.attachment_definitions[:avatar][:convert_options]
     end
@@ -203,14 +219,14 @@ class IntegrationTest < Test::Unit::TestCase
       end
     end
   end
-  
+
   context "A model with no dimension columns" do
     setup do
       rebuild_model
       @dummy      = Dummy.new
       @file = File.new(File.join(FIXTURES_DIR, "5k.png"))
     end
-    
+
     should "not break on image uploads" do
       assert_nothing_raised do
         assert @dummy.avatar = @file
@@ -227,7 +243,7 @@ class IntegrationTest < Test::Unit::TestCase
       @image_file2 = File.new(File.join(FIXTURES_DIR, "5k.png"))
       @text_file   = File.new(File.join(FIXTURES_DIR, "text.txt"))
     end
-    
+
     should "assign dimensions for image uploads" do
       assert @dummy.avatar = @image_file
       assert @dummy.save
@@ -235,7 +251,7 @@ class IntegrationTest < Test::Unit::TestCase
       assert_equal 50, @dummy.avatar.height
       assert_equal "50x50", @dummy.avatar.size
     end
-    
+
     should "change dimensions if changing image upload" do
       @dummy.avatar = @image_file
       @dummy.save
@@ -255,7 +271,7 @@ class IntegrationTest < Test::Unit::TestCase
       @dummy.save
       assert_nil @dummy.avatar.size
     end
-    
+
     should "have geometric methods" do
       assert @dummy.avatar = @image_file
       assert @dummy.save
@@ -266,9 +282,9 @@ class IntegrationTest < Test::Unit::TestCase
       assert_equal 50, @dummy.avatar.larger
       assert_equal 50, @dummy.avatar.smaller
     end
-    
+
   end
-  
+
   context "A model with dimension columns and custom sizes" do
     setup do
       rebuild_model :with_dimensions => true,
@@ -276,11 +292,11 @@ class IntegrationTest < Test::Unit::TestCase
                                  :medium => "20x20",
                                  :thumb => ["5x5#", :gif] },
                     :default_style => :medium
-            
+
       @dummy     = Dummy.new
       @file = File.new(File.join(FIXTURES_DIR, "50x50.png"))
     end
-    
+
     should "return the default style dimensions" do
       assert @dummy.avatar = @file
       assert @dummy.save
@@ -288,7 +304,7 @@ class IntegrationTest < Test::Unit::TestCase
       assert_equal 20, @dummy.avatar.height
       assert_equal "20x20", @dummy.avatar.size
     end
-    
+
     should "return other style dimensions when asked" do
       assert @dummy.avatar = @file
       assert @dummy.save
@@ -302,7 +318,7 @@ class IntegrationTest < Test::Unit::TestCase
       assert_equal "30x30", @dummy.avatar.size(:large)
     end
   end
-  
+
   context "A model with a filesystem attachment" do
     setup do
       rebuild_model :styles => { :large => "300x300>",
@@ -317,7 +333,7 @@ class IntegrationTest < Test::Unit::TestCase
       @bad_file  = File.new(File.join(FIXTURES_DIR, "bad.png"), 'rb')
 
       assert @dummy.avatar = @file
-      assert @dummy.valid?
+      assert @dummy.valid?, @dummy.errors.full_messages.join(", ")
       assert @dummy.save
     end
 
@@ -394,7 +410,7 @@ class IntegrationTest < Test::Unit::TestCase
       Dummy.validates_attachment_presence :avatar
       @d2 = Dummy.find(@dummy.id)
       @d2.avatar = @file
-      assert   @d2.valid?, @d2.errors.full_messages.inspect 
+      assert   @d2.valid?, @d2.errors.full_messages.inspect
       @d2.avatar = @bad_file
       assert ! @d2.valid?
     end
@@ -407,7 +423,7 @@ class IntegrationTest < Test::Unit::TestCase
       @dummy.reload
       assert_equal "5k.png", @dummy.avatar_file_name
     end
-    
+
     context "that is assigned its file from another Paperclip attachment" do
       setup do
         @dummy2 = Dummy.new
@@ -415,7 +431,7 @@ class IntegrationTest < Test::Unit::TestCase
         assert  @dummy2.avatar = @file2
         @dummy2.save
       end
-      
+
       should "work when assigned a file" do
         assert_not_equal `identify -format "%wx%h" "#{@dummy.avatar.path(:original)}"`,
                          `identify -format "%wx%h" "#{@dummy2.avatar.path(:original)}"`
@@ -425,7 +441,7 @@ class IntegrationTest < Test::Unit::TestCase
         assert_equal `identify -format "%wx%h" "#{@dummy.avatar.path(:original)}"`,
                      `identify -format "%wx%h" "#{@dummy2.avatar.path(:original)}"`
       end
-    end    
+    end
 
   end
 
@@ -476,7 +492,6 @@ class IntegrationTest < Test::Unit::TestCase
                                    :thumb => ["32x32#", :gif] },
                       :storage => :s3,
                       :whiny_thumbnails => true,
-                      # :s3_options => {:logger => Logger.new(StringIO.new)},
                       :s3_credentials => File.new(File.join(File.dirname(__FILE__), "s3.yml")),
                       :default_style => :medium,
                       :bucket => ENV['S3_TEST_BUCKET'],
