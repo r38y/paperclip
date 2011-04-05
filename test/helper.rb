@@ -94,7 +94,7 @@ end
 class FakeModel
   attr_accessor :avatar_file_name,
                 :avatar_file_size,
-                :avatar_last_updated,
+                :avatar_updated_at,
                 :avatar_content_type,
                 :avatar_fingerprint,
                 :id

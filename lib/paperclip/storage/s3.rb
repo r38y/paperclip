@@ -63,7 +63,7 @@ module Paperclip
         rescue LoadError => e
           e.message << " (You may need to install the aws-s3 gem)"
           raise e
-        end
+        end unless defined?(AWS::S3)
 
         base.instance_eval do
           @s3_credentials = parse_credentials(@options[:s3_credentials])
@@ -85,13 +85,13 @@ module Paperclip
         end
         Paperclip.interpolates(:s3_alias_url) do |attachment, style|
           "#{attachment.s3_protocol}://#{attachment.s3_host_alias}/#{attachment.path(style).gsub(%r{^/}, "")}"
-        end
+        end unless Paperclip::Interpolations.respond_to? :s3_alias_url
         Paperclip.interpolates(:s3_path_url) do |attachment, style|
           "#{attachment.s3_protocol}://s3.amazonaws.com/#{attachment.bucket_name}/#{attachment.path(style).gsub(%r{^/}, "")}"
-        end
+        end unless Paperclip::Interpolations.respond_to? :s3_path_url
         Paperclip.interpolates(:s3_domain_url) do |attachment, style|
           "#{attachment.s3_protocol}://#{attachment.bucket_name}.s3.amazonaws.com/#{attachment.path(style).gsub(%r{^/}, "")}"
-        end
+        end unless Paperclip::Interpolations.respond_to? :s3_domain_url
       end
 
       def expiring_url(time = 3600)
