@@ -8,6 +8,7 @@ require 'mocha'
 require 'active_record'
 require 'active_record/version'
 require 'active_support'
+require 'mime/types'
 
 puts "Testing against version #{ActiveRecord::VERSION::STRING}"
 
@@ -19,7 +20,7 @@ rescue LoadError => e
   puts "debugger disabled"
 end
 
-ROOT = File.join(File.dirname(__FILE__), '..')
+ROOT = File.expand_path(File.join(File.dirname(__FILE__), '..'))
 
 def silence_warnings
   old_verbose, $VERBOSE = $VERBOSE, nil
@@ -67,6 +68,7 @@ end
 
 def rebuild_model options = {}
   ActiveRecord::Base.connection.create_table :dummies, :force => true do |table|
+    table.column :title, :string
     table.column :other, :string
     table.column :avatar_file_name, :string
     table.column :avatar_content_type, :string
@@ -89,6 +91,7 @@ def rebuild_class options = {}
     include Paperclip::Glue
     has_attached_file :avatar, options
   end
+  Dummy.reset_column_information
 end
 
 class FakeModel

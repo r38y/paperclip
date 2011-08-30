@@ -1,5 +1,4 @@
-Paperclip
-=========
+# Paperclip [![Build Status](https://secure.travis-ci.org/thoughtbot/paperclip.png?branch=master)](http://travis-ci.org/thoughtbot/paperclip)
 
 Paperclip is intended as an easy file attachment library for ActiveRecord. The
 intent behind it was to keep setup as easy as possible and to treat files as
@@ -26,23 +25,41 @@ that it does, on your command line, run `which convert` (one of the ImageMagick
 utilities). This will give you the path where that utility is installed. For
 example, it might return `/usr/local/bin/convert`.
 
-Then, in your environment config file, let Paperclip know to look there by adding that 
+Then, in your environment config file, let Paperclip know to look there by adding that
 directory to its path.
 
 In development mode, you might add this line to `config/environments/development.rb)`:
 
     Paperclip.options[:command_path] = "/usr/local/bin/"
 
+If you're on Mac OSX, you'll want to run the following with Homebrew:
+
+    brew install imagemagick
+
+If you are dealing with pdf uploads or running the test suite, also run:
+
+    brew install gs
+
 Installation
 ------------
+
+Paperclip is distributed as a gem, which is how it should be used in your app. It's
+technically still installable as a plugin, but that's discouraged, as Rails plays
+well with gems.
 
 Include the gem in your Gemfile:
 
     gem "paperclip", "~> 2.3"
 
-Or as a plugin:
+Or, if you don't use Bundler (though you probably should, even in Rails 2), with config.gem
 
-  ruby script/plugin install git://github.com/thoughtbot/paperclip.git
+    # In config/environment.rb
+    ...
+    Rails::Initializer.run do |config|
+      ...
+      config.gem "paperclip", :version => "~> 2.3"
+      ...
+    end
 
 Quick Start
 -----------
@@ -99,13 +116,18 @@ If the model has avatar_width and avatar_height columns:
 
     <%= image_tag @user.avatar.url, :size => @user.avatar.size %>
 
+To detach a file, simply set the attribute to `nil`:
+
+    @user.avatar = nil
+    @user.save
+
 Usage
 -----
 
 The basics of paperclip are quite simple: Declare that your model has an
 attachment with the has_attached_file method, and give it a name. Paperclip
 will wrap up up to four attributes (all prefixed with that attachment's name,
-so you can have multiple attachments per model if you wish) and give the a
+so you can have multiple attachments per model if you wish) and give them a
 friendly front end. The attributes are `<attachment>_file_name`,
 `<attachment>_file_size`, `<attachment>_content_type`, and `<attachment>_updated_at`.
 Only `<attachment>_file_name` is required for paperclip to operate. More
@@ -188,6 +210,12 @@ or more or the processors, and they are expected to ignore it.
 _NOTE: Because processors operate by turning the original attachment into the
 styles, no processors will be run if there are no styles defined._
 
+If you're interested in caching your thumbnail's width, height and size in the
+database, take a look at the [paperclip-meta](https://github.com/y8/paperclip-meta) gem.
+
+Also, if you're interesting to generate the thumbnail on-the-fly, you might want
+to look into the [attachment_on_the_fly](https://github.com/drpentode/Attachment-on-the-Fly) gem.
+
 Events
 ------
 
@@ -206,11 +234,93 @@ _NOTE: Post processing will not even *start* if the attachment is not valid
 according to the validations. Your callbacks and processors will *only* be
 called with valid attachments._
 
+URI Obfuscation
+---------------
+
+Paperclip has an interpolation called `:hash` for obfuscating filenames of publicly-available files. For more on this feature read author's own explanation.
+
+[https://github.com/thoughtbot/paperclip/pull/416](https://github.com/thoughtbot/paperclip/pull/416)
+
+MD5 Checksum / Fingerprint
+-------
+
+A MD5 checksum of the original file assigned will be placed in the model if it
+has an attribute named fingerprint.  Following the user model migration example
+above, the migration would look like the following.
+
+    class AddAvatarFingerprintColumnToUser < ActiveRecord::Migration
+      def self.up
+        add_column :users, :avatar_fingerprint, :string
+      end
+
+      def self.down
+        remove_column :users, :avatar_fingerprint
+      end
+    end
+
+Custom Attachment Processors
+-------
+
+Custom attachment processors can be implemented and their only requirement is
+to inherit from `Paperclip::Processor` (see `lib/paperclip/processor.rb`).
+For example, when `:styles` are specified for an image attachment, the
+thumbnail processor (see `lib/paperclip/thumbnail.rb`) is loaded without having
+to specify it as a `:processor` parameter to `has_attached_file`.  When any
+other processor is defined it must be called out in the `:processors`
+parameter if it is to be applied to the attachment.  The thumbnail processor
+uses the imagemagick `convert` command to do the work of resizing image
+thumbnails.  It would be easy to create a custom processor that watermarks
+an image using imagemagick's `composite` command.  Following the
+implementation pattern of the thumbnail processor would be a way to implement a
+watermark processor.  All kinds of attachment processors can be created;
+a few utility examples would be compression and encryption processors.
+
+
+Dynamic Configuration
+---------------------
+
+Callable objects (labdas, Procs) can be used in a number of places for dynamic
+configuration throughout Paperclip.  This strategy exists in a number of
+components of the library but is most significant in the possibilities for
+allowing custom styles and processors to be applied for specific model
+instances, rather than applying defined styles and processors across all
+instances.
+
+Dynamic Styles:
+
+Imagine a user model that had different styles based on the role of the user.
+Perhaps some users are bosses (e.g. a User model instance responds to #boss?)
+and merit a bigger avatar thumbnail than regular users. The configuration to
+determine what style parameters are to be used based on the user role might
+look as follows where a boss will receive a `300x300` thumbnail otherwise a
+`100x100` thumbnail will be created.
+
+    class User < ActiveRecord::Base
+      has_attached_file :avatar, :styles => lambda { |attachment| { :thumb => (attachment.instance.boss? ? "300x300>" : "100x100>") }
+    end
+
+Dynamic Processors:
+
+Another contrived example is a user model that is aware of which file processors
+should be applied to it (beyond the implied `thumbnail` processor invoked when
+`:styles` are defined). Perhaps we have a watermark processor available and it is
+only used on the avatars of certain models.  The configuration for this might be
+where the instance is queried for which processors should be applied to it.
+Presumably some users might return `[:thumbnail, :watermark]` for its
+processors, where a defined `watermark` processor is invoked after the
+`thumbnail` processor already defined by Paperclip.
+
+    class User < ActiveRecord::Base
+      has_attached_file :avatar, :processors => lambda { |instance| instance.processors }
+      attr_accessor :watermark
+    end
+
 Testing
 -------
 
 Paperclip provides rspec-compatible matchers for testing attachments. See the
-documentation on Paperclip::Shoulda::Matchers for more information.
+documentation on [Paperclip::Shoulda::Matchers](http://rubydoc.info/gems/paperclip/Paperclip/Shoulda/Matchers)
+for more information.
 
 Contributing
 ------------
@@ -224,6 +334,8 @@ guidelines:
 2. Make sure there are tests! We will not accept any patch that is not tested.
    It's a rare time when explicit tests aren't needed. If you have questions
    about writing tests for paperclip, please ask the mailing list.
+
+Please see CONTRIBUTING.md for details.
 
 Credits
 -------

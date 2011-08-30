@@ -4,13 +4,13 @@ require 'bundler/setup'
 
 require 'rake'
 require 'rake/testtask'
-require 'rake/rdoctask'
+require 'rdoc/task'
 
 $LOAD_PATH << File.join(File.dirname(__FILE__), 'lib')
 require 'paperclip'
 
 desc 'Default: run unit tests.'
-task :default => [:clean, :all]
+task :default => [:clean, 'appraisal:install', :all]
 
 desc 'Test the paperclip plugin under all supported Rails versions.'
 task :all do |t|
@@ -31,7 +31,7 @@ task :shell do |t|
 end
 
 desc 'Generate documentation for the paperclip plugin.'
-Rake::RDocTask.new(:rdoc) do |rdoc|
+RDoc::Task.new(:rdoc) do |rdoc|
   rdoc.rdoc_dir = 'doc'
   rdoc.title    = 'Paperclip'
   rdoc.options << '--line-numbers' << '--inline-source'
